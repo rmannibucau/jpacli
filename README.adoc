@@ -1,0 +1,69 @@
+= JPA CLI
+
+Samples:
+
+[source,numbered]
+----
+datasource register --url=jdbc:mysql://localhost:3306/test --user=yyy --password=xxx
+info entity --class=com.github.rmannibucau.jpa.cli.entity.Test
+jpa query --query="select count(t) from Test t"
+jpa query --query="select t from Test t"
+jpa query --query="select t from Test t" --max=10 --start=0
+----
+
+== Configuration
+=== DataSources
+
+In properties:
+
+[source,numbered]
+----
+# 1 file can contain multiple datasource, just change the prefix (xxx)
+xxx.url = jdbc:mysql://localhost:3306/test
+xxx.username = myuser
+xxx.password = mypassword
+# optionals
+xxx.driver = com.mysql.jdbc.Driver
+xxx.name = xxx-database
+----
+
+=== Persistence
+
+In properties:
+
+[source,numbered]
+----
+# 1 file = 1 persistence unit configuration
+xxx.entities = com.superbiz.Entity1,com.superbiz.Entity2,com.superbiz.Entity3
+xxx.datasource = xxx
+----
+
+=== Script
+
+.default.jpacli
+[source,numbered]
+----
+datasource register --url=jdbc:mysql://localhost:3306/test --user=yyy --password=xxx
+info entity --class=com.github.rmannibucau.jpa.cli.entity.Test
+jpa query --query="select count(t) from Test t"
+jpa query --query="select t from Test t"
+jpa query --query="select t from Test t" --max=10 --start=0
+----
+
+To load it:
+
+[source]
+----
+script --file=/usr/local/jpacli/default.jpacli
+----
+
+== Help
+
+Just type `help`.
+
+== Status
+
+Only simple attributes are supported.
+
+TODO:
+- Collections and relationship
