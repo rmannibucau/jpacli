@@ -38,11 +38,11 @@ public class CliTest {
         cli.execute("jpa query --query='select t from CliTest$ETest t'");
         assertTrue(stdout.getLog().contains(
                 "===============================================" + lineSeparator() +
-                "| id |           timestamp           | value  |" + lineSeparator() +
-                "===============================================" + lineSeparator() +
-                "| 1  | Mon Mar 30 00:00:00 CEST 2015 | test#1 |" + lineSeparator() +
-                "| 2  | Mon Mar 30 00:00:00 CEST 2015 | test#2 |" + lineSeparator() +
-                "-----------------------------------------------" + lineSeparator()));
+                        "| id |           timestamp           | value  |" + lineSeparator() +
+                        "===============================================" + lineSeparator() +
+                        "| 1  | Mon Mar 30 00:00:00 CEST 2015 | test#1 |" + lineSeparator() +
+                        "| 2  | Mon Mar 30 00:00:00 CEST 2015 | test#2 |" + lineSeparator() +
+                        "-----------------------------------------------" + lineSeparator()));
         stdout.clear();
 
         // pagination
@@ -69,6 +69,35 @@ public class CliTest {
                 "| 1 | test#1 | 2015-03-30 |" + lineSeparator() +
                 "| 2 | test#2 | 2015-03-30 |" + lineSeparator() +
                 "---------------------------" + lineSeparator()));
+        stdout.clear();
+
+        // meta
+        cli.execute("jpa meta");
+        assertTrue(stdout.getLog().contains(
+                "com.github.rmannibucau.jpa.cli.CliTest$ETest (ENTITY)" + lineSeparator() +
+                "=================================" + lineSeparator() +
+                "|   name    |  type  | category |" + lineSeparator() +
+                "=================================" + lineSeparator() +
+                "|    id     |  long  |  BASIC   |" + lineSeparator() +
+                "|--------------------------------" + lineSeparator() +
+                "| timestamp |  Date  |  BASIC   |" + lineSeparator() +
+                "|--------------------------------" + lineSeparator() +
+                "|   value   | String |  BASIC   |" + lineSeparator() +
+                "|--------------------------------" + lineSeparator()));
+        stdout.clear();
+
+        cli.execute("jpa meta --type=" + ETest.class.getName());
+        assertTrue(stdout.getLog().contains(
+                "com.github.rmannibucau.jpa.cli.CliTest$ETest (ENTITY)" + lineSeparator() +
+                "=================================" + lineSeparator() +
+                "|   name    |  type  | category |" + lineSeparator() +
+                "=================================" + lineSeparator() +
+                "|    id     |  long  |  BASIC   |" + lineSeparator() +
+                "|--------------------------------" + lineSeparator() +
+                "| timestamp |  Date  |  BASIC   |" + lineSeparator() +
+                "|--------------------------------" + lineSeparator() +
+                "|   value   | String |  BASIC   |" + lineSeparator() +
+                "|--------------------------------" + lineSeparator()));
         stdout.clear();
 
         // parameters

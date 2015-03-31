@@ -17,8 +17,13 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -29,12 +34,45 @@ import javax.persistence.Parameter;
 import javax.persistence.Query;
 import javax.persistence.metamodel.Attribute;
 import javax.persistence.metamodel.EntityType;
+import javax.persistence.metamodel.ManagedType;
+import javax.persistence.metamodel.Metamodel;
 
 import static com.github.rmannibucau.jpa.cli.command.Commands.cli;
 import static java.util.Arrays.asList;
 
 @Command("jpa")
 public class JPACommands {
+    @Command("meta")
+    public static StreamingOutput meta(@Option({ "type", "t" }) final String type) throws ClassNotFoundException {
+        final Class<?> clazz = type == null ? null : Thread.currentThread().getContextClassLoader().loadClass(type);
+        final EntityManager em = init(false);
+        final Metamodel meta = em.getMetamodel();
+        return new StreamingOutput() {
+            @Override
+            public void write(final OutputStream outputStream) throws IOException {
+                final PrintStream ps = new PrintStream(outputStream);
+                if (clazz != null) {
+                    dumpType(ps, meta.entity(clazz));
+                } else {
+                    final List<ManagedType<?>> managedTypes = new ArrayList<>(meta.getManagedTypes());
+                    Collections.sort(managedTypes, new Comparator<ManagedType<?>>() {
+                        @Override
+                        public int compare(final ManagedType<?> o1, final ManagedType<?> o2) {
+                            return o1.getJavaType().getName().compareTo(o2.getJavaType().getName());
+                        }
+                    });
+                    final Collection<String> seen = new HashSet<>();
+                    for (final ManagedType<?> managedType : managedTypes) {
+                        if (!seen.add(managedType.getJavaType().getName())) { // subclassing, prevent to print the same entity twice
+                            continue;
+                        }
+                        dumpType(ps, managedType);
+                    }
+                }
+            }
+        };
+    }
+
     @Command("query")
     public static StreamingOutput query(@Option({ "query", "q" }) final String query,
                       @Option({ "transaction", "tx", "t" }) @Default("false") final boolean transaction,
@@ -198,5 +236,24 @@ public class JPACommands {
             }
         }
         em.clear();
+    }
+
+    private static void dumpType(final PrintStream ps, final ManagedType<?> entityType) {
+        ps.println(entityType.getJavaType().getName() + " (" + entityType.getPersistenceType() + ")");
+
+        final List<Attribute<?, ?>> attributes = new ArrayList<Attribute<?, ?>>(entityType.getAttributes());
+        Collections.sort(attributes, new Comparator<Attribute<?, ?>>() {
+            @Override
+            public int compare(final Attribute<?, ?> o1, final Attribute<?, ?> o2) {
+                return o1.getName().compareTo(o2.getName());
+            }
+        });
+
+        final Lines lines = new Lines(asList("name", "type", "category"));
+        for (final Attribute<?, ?> attribute : attributes) {
+            lines.line(asList(attribute.getName(), attribute.getJavaType().getName().replace("java.lang.", "").replace("java.util.", ""), attribute.getPersistentAttributeType().name()));
+        }
+        lines.print(ps);
+        ps.println();
     }
 }
