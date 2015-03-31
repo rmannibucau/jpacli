@@ -11,12 +11,13 @@ import com.github.rmannibucau.jpa.cli.jdbc.Drivers;
 import com.github.rmannibucau.jpa.cli.parameter.ParameterHolder;
 import com.github.rmannibucau.jpa.cli.provider.DataSourceProvider;
 import com.github.rmannibucau.jpa.cli.provider.EntityManagerProvider;
+import jline.console.ConsoleReader;
 import org.tomitribe.crest.Main;
 import org.tomitribe.crest.environments.Environment;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.Scanner;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 
@@ -84,22 +85,21 @@ public class Cli {
         }
     }
 
-    public static void main(final String[] args) {
+    public static void main(final String[] args) throws IOException {
         final Cli cli = new Cli();
         if (args != null && args.length > 0) {
             cli.parse(args);
         }
 
         // todo: replace scanner by readline?
-        final Scanner scanner = new Scanner(System.in);
+        final ConsoleReader reader = new ConsoleReader();
         String line;
-        System.out.print("> ");
-        while ((line = scanner.nextLine()) != null) {
+        String prompt = System.getProperty("user.name", "jpacli") + " > ";
+        while ((line = reader.readLine(prompt)) != null) {
             if (asList("quit", "q", "exit", "x").contains(line.trim())) {
                 break;
             }
             cli.execute(line);
-            System.out.print("> ");
         }
     }
 
