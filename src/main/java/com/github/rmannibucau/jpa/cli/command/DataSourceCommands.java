@@ -14,7 +14,7 @@ import static com.github.rmannibucau.jpa.cli.command.Commands.cli;
 @Command("datasource")
 public class DataSourceCommands {
     @Command("register")
-    public void register(@Option({ "name", "n" }) @Default("default") final String name,
+    public static void register(@Option({ "name", "n" }) @Default("default") final String name,
                          @Option({ "url", "u" }) final String url,
                          @Option({ "user" }) final String user,
                          @Option({ "password", "pwd", "p" }) final String password) {
@@ -22,12 +22,12 @@ public class DataSourceCommands {
     }
 
     @Command("deregister")
-    public void deregister(@Option({ "name", "n" }) final String name) {
+    public static void deregister(@Option({ "name", "n" }) final String name) {
         cli().getDataSourceProvider().deregister(name);
     }
 
     @Command("load-driver")
-    public void driver(@Option({ "class", "c" }) final String clazz) {
+    public static void driver(@Option({ "class", "c" }) final String clazz) {
         try {
             Class.forName(clazz, true, Thread.currentThread().getContextClassLoader());
         } catch (final ClassNotFoundException e) {
@@ -36,7 +36,7 @@ public class DataSourceCommands {
     }
 
     @Command("load")
-    public void load(@Option({ "file", "f" }) final File from) {
+    public static void load(@Option({ "file", "f" }) final File from) {
         if (!from.isFile()) {
             return;
         }

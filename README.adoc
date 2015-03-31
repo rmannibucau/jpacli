@@ -11,6 +11,30 @@ jpa query --query="select t from Test t"
 jpa query --query="select t from Test t" --max=10 --start=0
 ----
 
+== Binding parameters
+
+=== Supported types:
+
+All classpath types are supported however few shortcut are provided:
+
+- string (`String`)
+- Int (`Integer`)
+- Long (`Long`)
+- int (`int`)
+- long (`long`)
+- date (`java.util.Date`)
+- date-sql (`java.sql.Date`)
+- timestamp (`java.sql.Timestamp`)
+
+To bind a parameter just call:
+
+[source]
+----
+parameter add --name=xxx --type=yyy --value=zzz
+----
+
+You can also remove a single one (remove command) or clear them all with clear command.
+
 == Configuration
 === DataSources
 
@@ -66,4 +90,5 @@ Just type `help`.
 Only simple attributes are supported.
 
 TODO:
-- Collections and relationship
+
+- relationship

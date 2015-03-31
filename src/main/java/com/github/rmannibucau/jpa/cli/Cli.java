@@ -4,9 +4,11 @@ import com.github.rmannibucau.jpa.cli.command.DataSourceCommands;
 import com.github.rmannibucau.jpa.cli.command.GlobalCommands;
 import com.github.rmannibucau.jpa.cli.command.InfoCommands;
 import com.github.rmannibucau.jpa.cli.command.JPACommands;
+import com.github.rmannibucau.jpa.cli.command.ParameterCommands;
 import com.github.rmannibucau.jpa.cli.envrt.CliEnvironment;
 import com.github.rmannibucau.jpa.cli.impl.PersistenceUnitInfoImpl;
 import com.github.rmannibucau.jpa.cli.jdbc.Drivers;
+import com.github.rmannibucau.jpa.cli.parameter.ParameterHolder;
 import com.github.rmannibucau.jpa.cli.provider.DataSourceProvider;
 import com.github.rmannibucau.jpa.cli.provider.EntityManagerProvider;
 import org.tomitribe.crest.Main;
@@ -24,8 +26,10 @@ public class Cli {
     private final EntityManagerProvider emfProvider = new EntityManagerProvider();
     private final DataSourceProvider dataSourceProvider = new DataSourceProvider();
     private final PersistenceUnitInfoImpl info = new PersistenceUnitInfoImpl();
-    private final Main crest = new Main(asList(DataSourceCommands.class, InfoCommands.class, JPACommands.class, GlobalCommands.class));
+    private final Main crest = new Main(asList(DataSourceCommands.class, InfoCommands.class, JPACommands.class, GlobalCommands.class, ParameterCommands.class));
     private final Environment env = new CliEnvironment(this);
+    private final ParameterHolder parameters = new ParameterHolder();
+
     private EntityManagerFactory emf;
     private EntityManager em;
 
@@ -51,6 +55,10 @@ public class Cli {
 
     public DataSourceProvider getDataSourceProvider() {
         return dataSourceProvider;
+    }
+
+    public ParameterHolder getParameters() {
+        return parameters;
     }
 
     public EntityManager em(final boolean create) {

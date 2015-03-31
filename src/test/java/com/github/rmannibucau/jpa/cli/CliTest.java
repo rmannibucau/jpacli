@@ -17,6 +17,7 @@ import javax.persistence.Table;
 
 import static java.lang.System.lineSeparator;
 import static java.util.Arrays.asList;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class CliTest {
@@ -37,21 +38,21 @@ public class CliTest {
         cli.execute("jpa query --query='select t from CliTest$ETest t'");
         assertTrue(stdout.getLog().contains(
                 "===============================================" + lineSeparator() +
-                        "| id |           timestamp           | value  |" + lineSeparator() +
-                        "===============================================" + lineSeparator() +
-                        "| 1  | Mon Mar 30 00:00:00 CEST 2015 | test#1 |" + lineSeparator() +
-                        "| 2  | Mon Mar 30 00:00:00 CEST 2015 | test#2 |" + lineSeparator() +
-                        "-----------------------------------------------" + lineSeparator()));
+                "| id |           timestamp           | value  |" + lineSeparator() +
+                "===============================================" + lineSeparator() +
+                "| 1  | Mon Mar 30 00:00:00 CEST 2015 | test#1 |" + lineSeparator() +
+                "| 2  | Mon Mar 30 00:00:00 CEST 2015 | test#2 |" + lineSeparator() +
+                "-----------------------------------------------" + lineSeparator()));
         stdout.clear();
 
         // pagination
         cli.execute("jpa query --query='select t from CliTest$ETest t' --max=1 --start=0");
         assertTrue(stdout.getLog().contains(
                 "===============================================" + lineSeparator() +
-                        "| id |           timestamp           | value  |" + lineSeparator() +
-                        "===============================================" + lineSeparator() +
-                        "| 1  | Mon Mar 30 00:00:00 CEST 2015 | test#1 |" + lineSeparator() +
-                        "-----------------------------------------------" + lineSeparator()));
+                "| id |           timestamp           | value  |" + lineSeparator() +
+                "===============================================" + lineSeparator() +
+                "| 1  | Mon Mar 30 00:00:00 CEST 2015 | test#1 |" + lineSeparator() +
+                "-----------------------------------------------" + lineSeparator()));
         stdout.clear();
 
         // aggregation
@@ -59,7 +60,23 @@ public class CliTest {
         assertTrue(stdout.getLog().contains("2"));
         stdout.clear();
 
-        cli.execute("info auto");
+        // native
+        cli.execute("jpa native-query --query='select id, value, timestamp from ETEST'");
+        assertTrue(stdout.getLog().contains(
+                "===========================" + lineSeparator() +
+                "| ? |   ?    |     ?      |" + lineSeparator() +
+                "===========================" + lineSeparator() +
+                "| 1 | test#1 | 2015-03-30 |" + lineSeparator() +
+                "| 2 | test#2 | 2015-03-30 |" + lineSeparator() +
+                "---------------------------" + lineSeparator()));
+        stdout.clear();
+
+        // parameters
+        cli.execute("parameter add --name=id --value=2 --type=long");
+        cli.execute("jpa query --query='select t from CliTest$ETest t where t.id = :id'");
+        assertTrue(stdout.getLog().contains("2  | Mon Mar 30 00:00:00 CEST 2015 | test#2"));
+        assertFalse(stdout.getLog().contains("1  | Mon Mar 30 00:00:00 CEST 2015 | test#1"));
+        stdout.clear();
     }
 
     private void createDb() throws SQLException {

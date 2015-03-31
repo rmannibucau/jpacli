@@ -126,6 +126,20 @@ public class InfoCommands {
         cli.reset();
     }
 
+    @Command("remove-entity")
+    public static void removeEntity(@Option({"class", "c"}) final String clazz) {
+        final Cli cli = cli();
+        cli.getInfo().getManagedClassNames().remove(clazz);
+        cli.reset();
+    }
+
+    @Command("clear-entities")
+    public static void removeEntities(@Option({"class", "c"}) final String clazz) {
+        final Cli cli = cli();
+        cli.getInfo().getManagedClassNames().clear();
+        cli.reset();
+    }
+
     @Command("load")
     public static void load(@Option({"file", "f"}) final File from) {
         final Cli cli = cli();
@@ -144,7 +158,11 @@ public class InfoCommands {
         for (final String key : properties.stringPropertyNames()) {
             if (key.endsWith(".entities")) {
                 final String value = properties.getProperty(key);
-                cli.getInfo().getManagedClassNames().addAll(asList(value.split(" *, *")));
+                if ("auto".equals(value)) {
+                    auto(true, true);
+                } else {
+                    cli.getInfo().getManagedClassNames().addAll(asList(value.split(" *, *")));
+                }
             } else if (key.endsWith(".datasource")) {
                 final String value = properties.getProperty(key);
                 cli.getInfo().setDataSource(cli.getDataSourceProvider().getDataSource(value));

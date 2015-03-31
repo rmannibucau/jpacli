@@ -13,7 +13,7 @@ import static com.github.rmannibucau.jpa.cli.command.Commands.cli;
 
 public class GlobalCommands {
     @Command("script")
-    public void script(@Option({ "file", "f" }) final File script) {
+    public static void script(@Option({ "file", "f" }) final File script) {
         if (!script.exists()) {
             return;
         }

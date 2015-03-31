@@ -9,7 +9,7 @@ public class Line implements Comparable<Line> {
     public static final char EMPTY_CHAR = ' ';
 
     private final String[] columns;
-    private String cr = System.getProperty("line.separator");
+    private String cr = System.lineSeparator();
 
     public Line(final String... columns) {
         this.columns = columns;
