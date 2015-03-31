@@ -79,11 +79,9 @@ public class CliTest {
                 "|   name    |  type  | category |" + lineSeparator() +
                 "=================================" + lineSeparator() +
                 "|    id     |  long  |  BASIC   |" + lineSeparator() +
-                "|--------------------------------" + lineSeparator() +
                 "| timestamp |  Date  |  BASIC   |" + lineSeparator() +
-                "|--------------------------------" + lineSeparator() +
                 "|   value   | String |  BASIC   |" + lineSeparator() +
-                "|--------------------------------" + lineSeparator()));
+                "---------------------------------"));
         stdout.clear();
 
         cli.execute("jpa meta --type=" + ETest.class.getName());
@@ -93,11 +91,9 @@ public class CliTest {
                 "|   name    |  type  | category |" + lineSeparator() +
                 "=================================" + lineSeparator() +
                 "|    id     |  long  |  BASIC   |" + lineSeparator() +
-                "|--------------------------------" + lineSeparator() +
                 "| timestamp |  Date  |  BASIC   |" + lineSeparator() +
-                "|--------------------------------" + lineSeparator() +
                 "|   value   | String |  BASIC   |" + lineSeparator() +
-                "|--------------------------------" + lineSeparator()));
+                "---------------------------------"));
         stdout.clear();
 
         // parameters

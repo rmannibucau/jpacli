@@ -253,7 +253,7 @@ public class JPACommands {
         for (final Attribute<?, ?> attribute : attributes) {
             lines.line(asList(attribute.getName(), attribute.getJavaType().getName().replace("java.lang.", "").replace("java.util.", ""), attribute.getPersistentAttributeType().name()));
         }
-        lines.print(ps);
+        lines.printWithoutIntermidateHorizontalDelimiter(ps);
         ps.println();
     }
 }
