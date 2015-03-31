@@ -1,7 +1,8 @@
 package com.github.rmannibucau.jpa.cli.command;
 
 import com.github.rmannibucau.jpa.cli.Cli;
-import com.github.rmannibucau.jpa.cli.console.Lines;
+import com.github.rmannibucau.jpa.cli.configuration.Configuration;
+import com.github.rmannibucau.jpa.cli.console.Table;
 import com.github.rmannibucau.jpa.cli.impl.ParameterImpl;
 import com.github.rmannibucau.jpa.cli.parameter.ParameterHolder;
 import org.tomitribe.crest.api.Command;
@@ -23,7 +24,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +43,7 @@ import static java.util.Arrays.asList;
 @Command("jpa")
 public class JPACommands {
     @Command("meta")
-    public static StreamingOutput meta(@Option({ "type", "t" }) final String type) throws ClassNotFoundException {
+    public static StreamingOutput meta(@Option({"type", "t"}) final String type, @Option("vertical") final Boolean vertical) throws ClassNotFoundException {
         final Class<?> clazz = type == null ? null : Thread.currentThread().getContextClassLoader().loadClass(type);
         final EntityManager em = init(false);
         final Metamodel meta = em.getMetamodel();
@@ -52,7 +52,7 @@ public class JPACommands {
             public void write(final OutputStream outputStream) throws IOException {
                 final PrintStream ps = new PrintStream(outputStream);
                 if (clazz != null) {
-                    dumpType(ps, meta.entity(clazz));
+                    dumpType(ps, meta.entity(clazz), vertical);
                 } else {
                     final List<ManagedType<?>> managedTypes = new ArrayList<>(meta.getManagedTypes());
                     Collections.sort(managedTypes, new Comparator<ManagedType<?>>() {
@@ -66,7 +66,7 @@ public class JPACommands {
                         if (!seen.add(managedType.getJavaType().getName())) { // subclassing, prevent to print the same entity twice
                             continue;
                         }
-                        dumpType(ps, managedType);
+                        dumpType(ps, managedType, vertical);
                     }
                 }
             }
@@ -74,57 +74,66 @@ public class JPACommands {
     }
 
     @Command("query")
-    public static StreamingOutput query(@Option({ "query", "q" }) final String query,
-                      @Option({ "transaction", "tx", "t" }) @Default("false") final boolean transaction,
-                      @Option({ "commit", "ci" }) @Default("false") final boolean commit,
-                      @Option("collection") @Default("false") final boolean collection,
-                      @Option("relationship") @Default("false") final boolean relationship,
-                      @Option("start") @Default("-1") final int start,
-                      @Option("max") @Default("100") final int max) {
+    public static StreamingOutput query(
+            @Option({"query", "q"}) final String query,
+            @Option({"transaction", "tx", "t"}) @Default("false") final boolean transaction,
+            @Option({"commit", "ci"}) @Default("false") final boolean commit,
+            @Option("collection") @Default("false") final boolean collection,
+            @Option("relationship") @Default("false") final boolean relationship,
+            @Option("vertical") final Boolean vertical,
+            @Option("start") @Default("-1") final int start,
+            @Option("max") @Default("100") final int max) {
         final EntityManager em = init(transaction);
         try {
             final Query q = em.createQuery(query);
-            return execute(collection, relationship, start, max, em, q);
+            return execute(collection, relationship, start, max, vertical, em, q);
         } finally {
             release(transaction, commit, em);
         }
     }
 
     @Command("named-query")
-    public static StreamingOutput namedQuery(@Option({ "query", "q" }) final String query,
-                      @Option({ "transaction", "tx", "t" }) @Default("false") final boolean transaction,
-                      @Option({ "commit", "ci" }) @Default("false") final boolean commit,
-                      @Option("collection") @Default("false") final boolean collection,
-                      @Option("relationship") @Default("false") final boolean relationship,
-                      @Option("start") @Default("-1") final int start,
-                      @Option("max") @Default("100") final int max) {
+    public static StreamingOutput namedQuery(
+            @Option({"query", "q"}) final String query,
+            @Option({"transaction", "tx", "t"}) @Default("false") final boolean transaction,
+            @Option({"commit", "ci"}) @Default("false") final boolean commit,
+            @Option("collection") @Default("false") final boolean collection,
+            @Option("relationship") @Default("false") final boolean relationship,
+            @Option("vertical") @Default("false") final boolean vertical,
+            @Option("start") @Default("-1") final int start,
+            @Option("max") @Default("100") final int max) {
         final EntityManager em = init(transaction);
         try {
             final Query q = em.createNamedQuery(query);
-            return execute(collection, relationship, start, max, em, q);
+            return execute(collection, relationship, start, max, vertical, em, q);
         } finally {
             release(transaction, commit, em);
         }
     }
 
     @Command("native-query")
-    public static StreamingOutput nativeQuery(@Option({ "query", "q" }) final String query,
-                      @Option({ "transaction", "tx", "t" }) @Default("false") final boolean transaction,
-                      @Option({ "commit", "ci" }) @Default("false") final boolean commit,
-                      @Option("collection") @Default("false") final boolean collection,
-                      @Option("relationship") @Default("false") final boolean relationship,
-                      @Option("start") @Default("-1") final int start,
-                      @Option("max") @Default("100") final int max) {
+    public static StreamingOutput nativeQuery(
+            @Option({"query", "q"}) final String query,
+            @Option({"transaction", "tx", "t"}) @Default("false") final boolean transaction,
+            @Option({"commit", "ci"}) @Default("false") final boolean commit,
+            @Option("collection") @Default("false") final boolean collection,
+            @Option("relationship") @Default("false") final boolean relationship,
+            @Option("vertical") @Default("false") final boolean vertical,
+            @Option("start") @Default("-1") final int start,
+            @Option("max") @Default("100") final int max) {
         final EntityManager em = init(transaction);
         try {
             final Query q = em.createNativeQuery(query);
-            return execute(collection, relationship, start, max, em, q);
+            return execute(collection, relationship, start, max, vertical, em, q);
         } finally {
             release(transaction, commit, em);
         }
     }
 
-    private static StreamingOutput execute(final boolean collection, final boolean relationship, final int start, final int max, final EntityManager em, final Query query) {
+    private static StreamingOutput execute(final boolean collection, final boolean relationship,
+                                           final int start, final int max,
+                                           final Boolean vertical,
+                                           final EntityManager em, final Query query) {
         if (start >= 0) {
             query.setFirstResult(start);
         }
@@ -137,7 +146,7 @@ public class JPACommands {
             for (final Parameter<?> parameter : parameters) {
                 for (final ParameterImpl p : cliParameters.getParameters()) {
                     if ((p.getName() != null && parameter.getName() != null && p.getName().equals(parameter.getName()))
-                        || (parameter.getPosition() != null && p.getPosition() != null && p.getPosition().equals(parameter.getPosition()))) {
+                            || (parameter.getPosition() != null && p.getPosition() != null && p.getPosition().equals(parameter.getPosition()))) {
                         query.setParameter(p, p.getValue());
                         break;
                     }
@@ -159,16 +168,19 @@ public class JPACommands {
                             final int length = Array.getLength(first);
                             final String[] headers = new String[length];
                             Arrays.fill(headers, "?");
-                            final Lines lines = new Lines(asList(headers));
+                            final Table table = new Table(asList(headers));
                             for (final Object o : results) {
                                 final Collection<String> line = new LinkedList<>();
                                 for (int i = 0; i < length; i++) {
                                     line.add(String.valueOf(Array.get(o, i)));
                                 }
-                                lines.line(line);
+                                table.line(line);
                             }
-                            lines.printWithoutIntermidateHorizontalDelimiter(ps);
-                            ps.println();
+                            if (isVertical(vertical)) {
+                                table.printVertically(ps);
+                            } else {
+                                table.printHorizontally(ps);
+                            }
                         } else {
                             for (final Object o : results) {
                                 ps.println(String.valueOf(o));
@@ -188,7 +200,7 @@ public class JPACommands {
                         }
 
                         final Set<String> columns = fields.keySet();
-                        final Lines lines = new Lines(columns);
+                        final Table table = new Table(columns);
                         for (final Object o : results) {
                             final Collection<String> values = new LinkedList<>();
                             for (final String s : columns) {
@@ -204,14 +216,21 @@ public class JPACommands {
                                     values.add("??" + e.getMessage() + "??");
                                 }
                             }
-                            lines.line(values);
+                            table.line(values);
                         }
-                        lines.printWithoutIntermidateHorizontalDelimiter(ps);
-                        ps.println();
+                        if (isVertical(vertical)) {
+                            table.printVertically(ps);
+                        } else {
+                            table.printHorizontally(ps);
+                        }
                     }
                 }
             }
         };
+    }
+
+    private static boolean isVertical(final Boolean vertical) {
+        return (vertical != null && vertical) || (vertical == null && cli().getConfiguration().getOutput() == Configuration.Output.VERTICAL);
     }
 
     private static EntityManager init(final boolean transaction) {
@@ -238,7 +257,7 @@ public class JPACommands {
         em.clear();
     }
 
-    private static void dumpType(final PrintStream ps, final ManagedType<?> entityType) {
+    private static void dumpType(final PrintStream ps, final ManagedType<?> entityType, final Boolean vertical) {
         ps.println(entityType.getJavaType().getName() + " (" + entityType.getPersistenceType() + ")");
 
         final List<Attribute<?, ?>> attributes = new ArrayList<Attribute<?, ?>>(entityType.getAttributes());
@@ -249,11 +268,15 @@ public class JPACommands {
             }
         });
 
-        final Lines lines = new Lines(asList("name", "type", "category"));
+        final Table table = new Table(asList("name", "type", "category"));
         for (final Attribute<?, ?> attribute : attributes) {
-            lines.line(asList(attribute.getName(), attribute.getJavaType().getName().replace("java.lang.", "").replace("java.util.", ""), attribute.getPersistentAttributeType().name()));
+            table.line(asList(attribute.getName(), attribute.getJavaType().getName().replace("java.lang.", "").replace("java.util.", ""), attribute.getPersistentAttributeType().name()));
         }
-        lines.printWithoutIntermidateHorizontalDelimiter(ps);
+        if (isVertical(vertical)) {
+            table.printVertically(ps);
+        } else {
+            table.printHorizontally(ps);
+        }
         ps.println();
     }
 }

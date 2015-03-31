@@ -1,5 +1,6 @@
 package com.github.rmannibucau.jpa.cli;
 
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.StandardOutputStreamLog;
@@ -24,17 +25,15 @@ public class CliTest {
     @Rule
     public final StandardOutputStreamLog stdout = new StandardOutputStreamLog();
 
-    @Test
-    public void query() throws SQLException {
+    @BeforeClass
+    public static void db() throws SQLException {
         createDb();
+    }
 
-        final Cli cli = new Cli();
+    @Test
+    public void selectAll() {
+        final Cli cli = newCli();
 
-        // test cli
-        cli.execute("datasource register --url=jdbc:h2:mem:test --user=sa");
-        cli.execute("info entity --class=com.github.rmannibucau.jpa.cli.CliTest$ETest");
-
-        // default
         cli.execute("jpa query --query='select t from CliTest$ETest t'");
         assertTrue(stdout.getLog().contains(
                 "===============================================" + lineSeparator() +
@@ -43,24 +42,60 @@ public class CliTest {
                         "| 1  | Mon Mar 30 00:00:00 CEST 2015 | test#1 |" + lineSeparator() +
                         "| 2  | Mon Mar 30 00:00:00 CEST 2015 | test#2 |" + lineSeparator() +
                         "-----------------------------------------------" + lineSeparator()));
-        stdout.clear();
+    }
 
-        // pagination
+    @Test
+    public void vertical() {
+        final Cli cli = newCli();
+        cli.execute("jpa query --query='select t from CliTest$ETest t' --vertical");
+        assertTrue(stdout.getLog().contains(
+                "       id\t1" + lineSeparator() +
+                "timestamp\tMon Mar 30 00:00:00 CEST 2015" + lineSeparator() +
+                "    value\ttest#1" + lineSeparator() +
+                "" + lineSeparator() +
+                "       id\t2" + lineSeparator() +
+                "timestamp\tMon Mar 30 00:00:00 CEST 2015" + lineSeparator() +
+                "    value\ttest#2"));
+    }
+
+    @Test
+    public void verticalGlobal() {
+        final Cli cli = newCli();
+        cli.execute("setup table --format=VERTICAL");
+        cli.execute("jpa query --query='select t from CliTest$ETest t'");
+        assertTrue(stdout.getLog().contains(
+                "       id\t1" + lineSeparator() +
+                        "timestamp\tMon Mar 30 00:00:00 CEST 2015" + lineSeparator() +
+                        "    value\ttest#1" + lineSeparator() +
+                        "" + lineSeparator() +
+                        "       id\t2" + lineSeparator() +
+                        "timestamp\tMon Mar 30 00:00:00 CEST 2015" + lineSeparator() +
+                        "    value\ttest#2"));
+        cli.execute("setup table --format=HORIZONTAL"); // reset
+    }
+
+    @Test
+    public void pagiantion() {
+        final Cli cli = newCli();
         cli.execute("jpa query --query='select t from CliTest$ETest t' --max=1 --start=0");
         assertTrue(stdout.getLog().contains(
                 "===============================================" + lineSeparator() +
-                "| id |           timestamp           | value  |" + lineSeparator() +
-                "===============================================" + lineSeparator() +
-                "| 1  | Mon Mar 30 00:00:00 CEST 2015 | test#1 |" + lineSeparator() +
-                "-----------------------------------------------" + lineSeparator()));
-        stdout.clear();
+                        "| id |           timestamp           | value  |" + lineSeparator() +
+                        "===============================================" + lineSeparator() +
+                        "| 1  | Mon Mar 30 00:00:00 CEST 2015 | test#1 |" + lineSeparator() +
+                        "-----------------------------------------------" + lineSeparator()));
+    }
 
-        // aggregation
+    @Test
+    public void aggregation() {
+        final Cli cli = newCli();
         cli.execute("jpa query --query='select count(t) from CliTest$ETest t'");
         assertTrue(stdout.getLog().contains("2"));
-        stdout.clear();
+    }
 
-        // native
+    @Test
+    public void nativeQuery() {
+        final Cli cli = newCli();
         cli.execute("jpa native-query --query='select id, value, timestamp from ETEST'");
         assertTrue(stdout.getLog().contains(
                 "===========================" + lineSeparator() +
@@ -69,34 +104,38 @@ public class CliTest {
                 "| 1 | test#1 | 2015-03-30 |" + lineSeparator() +
                 "| 2 | test#2 | 2015-03-30 |" + lineSeparator() +
                 "---------------------------" + lineSeparator()));
-        stdout.clear();
+    }
 
-        // meta
+    @Test
+    public void meta() {
+        final Cli cli = newCli();
         cli.execute("jpa meta");
         assertTrue(stdout.getLog().contains(
                 "com.github.rmannibucau.jpa.cli.CliTest$ETest (ENTITY)" + lineSeparator() +
-                "=================================" + lineSeparator() +
-                "|   name    |  type  | category |" + lineSeparator() +
-                "=================================" + lineSeparator() +
-                "|    id     |  long  |  BASIC   |" + lineSeparator() +
-                "| timestamp |  Date  |  BASIC   |" + lineSeparator() +
-                "|   value   | String |  BASIC   |" + lineSeparator() +
-                "---------------------------------"));
+                        "=================================" + lineSeparator() +
+                        "|   name    |  type  | category |" + lineSeparator() +
+                        "=================================" + lineSeparator() +
+                        "|    id     |  long  |  BASIC   |" + lineSeparator() +
+                        "| timestamp |  Date  |  BASIC   |" + lineSeparator() +
+                        "|   value   | String |  BASIC   |" + lineSeparator() +
+                        "---------------------------------"));
         stdout.clear();
 
         cli.execute("jpa meta --type=" + ETest.class.getName());
         assertTrue(stdout.getLog().contains(
                 "com.github.rmannibucau.jpa.cli.CliTest$ETest (ENTITY)" + lineSeparator() +
-                "=================================" + lineSeparator() +
-                "|   name    |  type  | category |" + lineSeparator() +
-                "=================================" + lineSeparator() +
-                "|    id     |  long  |  BASIC   |" + lineSeparator() +
-                "| timestamp |  Date  |  BASIC   |" + lineSeparator() +
-                "|   value   | String |  BASIC   |" + lineSeparator() +
-                "---------------------------------"));
-        stdout.clear();
+                        "=================================" + lineSeparator() +
+                        "|   name    |  type  | category |" + lineSeparator() +
+                        "=================================" + lineSeparator() +
+                        "|    id     |  long  |  BASIC   |" + lineSeparator() +
+                        "| timestamp |  Date  |  BASIC   |" + lineSeparator() +
+                        "|   value   | String |  BASIC   |" + lineSeparator() +
+                        "---------------------------------"));
+    }
 
-        // parameters
+    @Test
+    public void parameters() {
+        final Cli cli = newCli();
         cli.execute("parameter add --name=id --value=2 --type=long");
         cli.execute("jpa query --query='select t from CliTest$ETest t where t.id = :id'");
         assertTrue(stdout.getLog().contains("2  | Mon Mar 30 00:00:00 CEST 2015 | test#2"));
@@ -104,10 +143,34 @@ public class CliTest {
         stdout.clear();
     }
 
-    private void createDb() throws SQLException {
+    @Test
+    public void alias() {
+        final Cli cli = newCli();
+        cli.execute("setup set-alias --alias=theone --cmd='jpa query --query=\"select t from CliTest$ETest t\"'");
+        cli.execute("theone");
+        assertTrue(stdout.getLog().contains("" +
+                "===============================================" + lineSeparator() +
+                "| id |           timestamp           | value  |" + lineSeparator() +
+                "===============================================" + lineSeparator() +
+                "| 1  | Mon Mar 30 00:00:00 CEST 2015 | test#1 |" + lineSeparator() +
+                "| 2  | Mon Mar 30 00:00:00 CEST 2015 | test#2 |" + lineSeparator() +
+                "-----------------------------------------------" + lineSeparator()));
+        stdout.clear();
+    }
+
+    private Cli newCli() {
+        final Cli cli = new Cli();
+
+        // test cli
+        cli.execute("datasource register --url=jdbc:h2:mem:test --user=sa");
+        cli.execute("info entity --class=com.github.rmannibucau.jpa.cli.CliTest$ETest");
+        return cli;
+    }
+
+    private static void createDb() throws SQLException {
         try (final Connection c = DriverManager.getConnection("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1", "sa", "")) {
             for (final String statement : asList(
-                    "create table ETEST (id integer not null, value char(10), timestamp date, primary key(id))",
+                    "create table if not exists ETEST (id integer not null, value char(10), timestamp date, primary key(id))",
                     "insert into ETEST (id, value, timestamp) values(1, 'test#1', {ts '2015-03-30 23:25:52.69'})",
                     "insert into ETEST (id, value, timestamp) values(2, 'test#2', {ts '2015-03-30 23:25:52.69'})"
             )) {

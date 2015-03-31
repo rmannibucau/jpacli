@@ -1,10 +1,13 @@
 package com.github.rmannibucau.jpa.cli;
 
+import com.github.rmannibucau.jpa.cli.command.ConfigurationCommands;
 import com.github.rmannibucau.jpa.cli.command.DataSourceCommands;
 import com.github.rmannibucau.jpa.cli.command.GlobalCommands;
 import com.github.rmannibucau.jpa.cli.command.InfoCommands;
 import com.github.rmannibucau.jpa.cli.command.JPACommands;
 import com.github.rmannibucau.jpa.cli.command.ParameterCommands;
+import com.github.rmannibucau.jpa.cli.configuration.AliasesManager;
+import com.github.rmannibucau.jpa.cli.configuration.Configuration;
 import com.github.rmannibucau.jpa.cli.envrt.CliEnvironment;
 import com.github.rmannibucau.jpa.cli.impl.PersistenceUnitInfoImpl;
 import com.github.rmannibucau.jpa.cli.jdbc.Drivers;
@@ -27,9 +30,12 @@ public class Cli {
     private final EntityManagerProvider emfProvider = new EntityManagerProvider();
     private final DataSourceProvider dataSourceProvider = new DataSourceProvider();
     private final PersistenceUnitInfoImpl info = new PersistenceUnitInfoImpl();
-    private final Main crest = new Main(asList(DataSourceCommands.class, InfoCommands.class, JPACommands.class, GlobalCommands.class, ParameterCommands.class));
+    private final Main crest = new Main(asList(
+            DataSourceCommands.class, InfoCommands.class, JPACommands.class, GlobalCommands.class, ParameterCommands.class, ConfigurationCommands.class));
     private final Environment env = new CliEnvironment(this);
     private final ParameterHolder parameters = new ParameterHolder();
+    private final Configuration configuration = new Configuration();
+    private final AliasesManager aliases = new AliasesManager();
 
     private EntityManagerFactory emf;
     private EntityManager em;
@@ -47,7 +53,7 @@ public class Cli {
     }
 
     public void execute(final String line) {
-        parse(toArgs(line));
+        parse(toArgs(aliases.findOrNoop(line)));
     }
 
     public PersistenceUnitInfoImpl getInfo() {
@@ -60,6 +66,14 @@ public class Cli {
 
     public ParameterHolder getParameters() {
         return parameters;
+    }
+
+    public Configuration getConfiguration() {
+        return configuration;
+    }
+
+    public AliasesManager getAliases() {
+        return aliases;
     }
 
     public EntityManager em(final boolean create) {
@@ -91,10 +105,9 @@ public class Cli {
             cli.parse(args);
         }
 
-        // todo: replace scanner by readline?
         final ConsoleReader reader = new ConsoleReader();
         String line;
-        String prompt = System.getProperty("user.name", "jpacli") + " > ";
+        final String prompt = System.getProperty("user.name", "jpacli") + " > ";
         while ((line = reader.readLine(prompt)) != null) {
             if (asList("quit", "q", "exit", "x").contains(line.trim())) {
                 break;
@@ -122,7 +135,7 @@ public class Cli {
                 end = null;
             } else if (c == '\\') {
                 escaped = true;
-            } else if (c == '"' || c == '\'') {
+            } else if (end == null && (c == '"' || c == '\'')) {
                 end = c;
             } else {
                 current.append(c);
